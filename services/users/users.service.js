@@ -149,6 +149,7 @@ module.exports = {
 		 * @returns {Object} core data from api service
 		 */
 		getCoreData: {
+			auth: "optional", // we get user if possible
 			params: {
 				transLang: { type: "string", optional: true },
 				transBlockName: { type: "string", optional: true }
@@ -180,6 +181,7 @@ module.exports = {
 									if (ctx.params.transLang!=coreData.lang.code) {
 										coreData.lang = this.getValueByCode(coreData.langs, ctx.params.transLang);
 									}
+									coreData = this.specialValuesFromContext(ctx, coreData);
 									return coreData;
 								});
 						})
@@ -196,6 +198,7 @@ module.exports = {
 						})
 							.then(translation => {
 								coreData.translation = translation;
+								coreData = this.specialValuesFromContext(ctx, coreData);
 								return coreData;
 							})
 							.catch(err => {
@@ -218,7 +221,8 @@ module.exports = {
 		 * @returns {Object} Created entity & token
 		 */
 		create: {
-			tokenize: "required",
+			auth: "required",
+			authType: "csrfOnly",
 			params: {
 				user: { type: "object", props: {
 					username: { type: "string" },
@@ -318,7 +322,8 @@ module.exports = {
 		 * @returns {Object} Logged in user with token
 		 */
 		login: {
-			tokenize: "required",
+			auth: "required",
+			auth: "csrfOnly",
 			params: {
 				user: { type: "object", props: {
 					email: { type: "email", min: 2 },
@@ -478,7 +483,7 @@ module.exports = {
 						if (decoded.id) {
 							return this.adapter.findById(decoded.id)
 								.then(found => {
-									if (found.dates.dateActivated && (new Date(found.dates.dateActivated).getTime() < new Date().getTime()) ) {
+									if (found?.dates?.dateActivated && (new Date(found.dates.dateActivated).getTime() < new Date().getTime()) ) {
 										return found;
 									}
 								});
@@ -719,6 +724,7 @@ module.exports = {
 
 		checkIfUserExists: {
 			auth: "required",
+			authType: "csrfOnly",
 			params: {
 				username: { type: "string" }
 			},
@@ -739,7 +745,8 @@ module.exports = {
 
 
 		checkIfEmailExists: {
-			tokenize: "required",
+			auth: "required",
+			authType: "csrfOnly",
 			params: {
 				email: { type: "email" }
 			},
@@ -940,7 +947,8 @@ module.exports = {
 		 *
 		 */
 		resetPassword: {
-			tokenize: "required",
+			auth: "required",
+			authType: "csrfOnly",
 			params: {
 				email: { type: "string" }
 			},
@@ -1199,7 +1207,6 @@ module.exports = {
 		 * set profile to be removed in 14 days
 		 */
 		deleteProfile: {
-			tokenize: "required",
 			auth: "required",
 			handler(ctx) {
 				this.logger.info("users.deleteProfile ctx.params:", {
